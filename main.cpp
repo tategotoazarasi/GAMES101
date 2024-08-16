@@ -4,8 +4,6 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
-constexpr double MY_PI = 3.1415926;
-
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
 	Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
@@ -18,37 +16,73 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
 	return view;
 }
 
-Eigen::Matrix4f get_model_matrix(float rotation_angle) {
-	Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-
-	// TODO: Implement this function
+/**
+ * 逐个元素地构建模型变换矩阵并返回该矩阵。在此函数中,你只需要实现三维中绕 z 轴旋转的变换矩阵,而不用处理平移与缩放。
+ * @return 变换矩阵
+ */
+Eigen::Matrix4f get_model_matrix(float angle_x, float angle_y, float angle_z) {
 	// Create the model matrix for rotating the triangle around the Z axis.
 	// Then return it.
+	Matrix4f rotate_x = Matrix4f();
+	Matrix4f rotate_y = Matrix4f();
+	Matrix4f rotate_z = Matrix4f();
+	angle_x           = angle_x / 180 * M_PIf;
+	angle_y           = angle_y / 180 * M_PIf;
+	angle_z           = angle_z / 180 * M_PIf;
 
-	return model;
+	rotate_x << 1, 0, 0, 0,
+	        0, cos(angle_x), -sin(angle_x), 0,
+	        0, sin(angle_x), cos(angle_x), 0,
+	        0, 0, 0, 1;
+	rotate_y << cos(angle_y), 0, sin(angle_y), 0,
+	        0, 1, 0, 0,
+	        -sin(angle_y), 0, cos(angle_y), 0,
+	        0, 0, 0, 1;
+	rotate_z << cos(angle_z), -sin(angle_z), 0, 0,
+	        sin(angle_z), cos(angle_z), 0, 0,
+	        0, 0, 1, 0,
+	        0, 0, 0, 1;
+	return rotate_z * rotate_y * rotate_x;
 }
 
+/**
+ * 使用给定的参数逐个元素地构建透视投影矩阵并返回该矩阵。
+ * @param eye_fov 视野角度 (Field of View, FOV)，即观察者在垂直方向上可以看到的视角范围，单位为度。
+ * @param aspect_ratio 视锥的宽高比 (Aspect Ratio)，通常是视口的宽度除以高度。
+ * @param zNear 近裁剪面 (Near Clipping Plane) 的距离。距离从观察者到近裁剪面的距离应为正值。
+ * @param zFar 远裁剪面 (Far Clipping Plane) 的距离。距离从观察者到远裁剪面的距离应为正值。
+ * @return 透视投影矩阵
+ */
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar) {
-	// Students will implement this function
-
-	Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
-
-	// TODO: Implement this function
 	// Create the projection matrix for the given parameters.
 	// Then return it.
+	float height              = 2 * zNear * tan(eye_fov / 2 / 180 * M_PIf);
+	float width               = height * aspect_ratio;
+	Matrix4f proj_persp2ortho = Matrix4f();
+	proj_persp2ortho << zNear, 0, 0, 0,
+	        0, zNear, 0, 0,
+	        0, 0, zNear + zFar, -zNear * zFar,
+	        0, 0, 1, 0;
+	Matrix4f ortho = Matrix4f();
+	ortho << 1 / (width / 2), 0, 0, 0,
+	        0, 1 / (height / 2), 0, 0,
+	        0, 0, -1 / ((zNear - zFar) / 2), 0,
+	        0, 0, 0, 1;
 
-	return projection;
+	return ortho * proj_persp2ortho;
 }
 
 int main(int argc, const char **argv) {
-	float angle          = 0;
+	float angle_x        = 0;
+	float angle_y        = 0;
+	float angle_z        = 0;
 	bool command_line    = false;
 	std::string filename = "output.png";
 
 	if(argc >= 3) {
 		command_line = true;
-		angle        = std::stof(argv[2]);// -r by default
+		angle_z      = std::stof(argv[2]);// -r by default
 		if(argc == 4) {
 			filename = std::string(argv[3]);
 		} else
@@ -72,7 +106,7 @@ int main(int argc, const char **argv) {
 	if(command_line) {
 		r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
-		r.set_model(get_model_matrix(angle));
+		r.set_model(get_model_matrix(angle_x, angle_y, angle_z));
 		r.set_view(get_view_matrix(eye_pos));
 		r.set_projection(get_projection_matrix(45, 1, 0.1, 50));
 
@@ -88,7 +122,7 @@ int main(int argc, const char **argv) {
 	while(key != 27) {
 		r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
-		r.set_model(get_model_matrix(angle));
+		r.set_model(get_model_matrix(angle_x, angle_y, angle_z));
 		r.set_view(get_view_matrix(eye_pos));
 		r.set_projection(get_projection_matrix(45, 1, 0.1, 50));
 
@@ -102,9 +136,22 @@ int main(int argc, const char **argv) {
 		std::cout << "frame count: " << frame_count++ << '\n';
 
 		if(key == 'a') {
-			angle += 10;
-		} else if(key == 'd') {
-			angle -= 10;
+			angle_z += 1;
+		}
+		if(key == 'd') {
+			angle_z -= 1;
+		}
+		if(key == 'w') {
+			angle_x += 1;
+		}
+		if(key == 's') {
+			angle_x -= 1;
+		}
+		if(key == 'q') {
+			angle_y += 1;
+		}
+		if(key == 'e') {
+			angle_y -= 1;
 		}
 	}
 
