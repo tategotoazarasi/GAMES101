@@ -18,10 +18,6 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
 
 Eigen::Matrix4f get_model_matrix(float rotation_angle) {
 	Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-	model << cos(rotation_angle), -sin(rotation_angle), 0, 0,
-	        sin(rotation_angle), cos(rotation_angle), 0, 0,
-	        0, 0, 1, 0,
-	        0, 0, 0, 1;
 	return model;
 }
 
@@ -66,7 +62,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar) {
 	// Create the projection matrix for the given parameters.
 	// Then return it.
-	float height              = 2 * zNear * tan(eye_fov / 2 / 180 * M_PIf);
+	float height              = 2 * -zNear * tan(eye_fov / 2 / 180 * M_PIf);
 	float width               = height * aspect_ratio;
 	Matrix4f proj_persp2ortho = Matrix4f();
 	proj_persp2ortho << zNear, 0, 0, 0,
@@ -76,7 +72,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 	Matrix4f ortho = Matrix4f();
 	ortho << 1 / (width / 2), 0, 0, 0,
 	        0, 1 / (height / 2), 0, 0,
-	        0, 0, -1 / ((zNear - zFar) / 2), 0,
+	        0, 0, -1 / ((zFar - zNear) / 2), 0,
 	        0, 0, 0, 1;
 
 	return ortho * proj_persp2ortho;
