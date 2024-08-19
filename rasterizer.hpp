@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Triangle.hpp"
+#include "global.hpp"
 #include <algorithm>
 #include <eigen3/Eigen/Eigen>
 using namespace Eigen;
@@ -29,10 +30,10 @@ namespace rst {
 	};
 
 	/*
- * For the curious : The draw function takes two buffer id's as its arguments.
- * These two structs make sure that if you mix up with their orders, the
- * compiler won't compile it. Aka : Type safety
- * */
+     * For the curious : The draw function takes two buffer id's as its arguments. These two structs
+     * make sure that if you mix up with their orders, the compiler won't compile it.
+     * Aka : Type safety
+     * */
 	struct pos_buf_id {
 		int pos_id = 0;
 	};
@@ -41,43 +42,35 @@ namespace rst {
 		int ind_id = 0;
 	};
 
+	struct col_buf_id {
+		int col_id = 0;
+	};
+
 	class rasterizer {
 	public:
 		rasterizer(int w, int h);
 		pos_buf_id load_positions(const std::vector<Eigen::Vector3f> &positions);
 		ind_buf_id load_indices(const std::vector<Eigen::Vector3i> &indices);
+		col_buf_id load_colors(const std::vector<Eigen::Vector3f> &colors);
 
-		/**
-		 * 将内部的模型矩阵作为参数传递给光栅化器。
-		 * @param 内部的模型矩阵
-		 */
 		void set_model(const Eigen::Matrix4f &m);
-		/**
-		 * 将视图变换矩阵设为内部视图矩阵。
-		 * @param v 视图变换矩阵
-		 */
 		void set_view(const Eigen::Matrix4f &v);
-		/**
-		 * 将内部的投影矩阵设为给定矩阵 p,并传递给光栅化器
-		 * @param p 投影矩阵
-		 */
 		void set_projection(const Eigen::Matrix4f &p);
-		/**
-		 * 将屏幕像素点 (x, y) 设为 (r, g, b) 的颜色,并写入相应的帧缓冲区位置。
-		 * @param point 屏幕像素点
-		 * @param color 颜色
-		 */
+
 		void set_pixel(const Eigen::Vector3f &point, const Eigen::Vector3f &color);
 
 		void clear(Buffers buff);
 
-		void draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, Primitive type);
+		void draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf_id col_buffer, Primitive type);
 
 		std::vector<Eigen::Vector3f> &frame_buffer() { return frame_buf; }
 
 	private:
 		void draw_line(Eigen::Vector3f begin, Eigen::Vector3f end);
-		void rasterize_wireframe(const Triangle &t);
+
+		void rasterize_triangle(const Triangle &t);
+
+		// VERTEX SHADER -> MVP -> Clipping -> /.W -> VIEWPORT -> DRAWLINE/DRAWTRI -> FRAGSHADER
 
 	private:
 		Eigen::Matrix4f model;
@@ -86,11 +79,10 @@ namespace rst {
 
 		std::map<int, std::vector<Eigen::Vector3f>> pos_buf;
 		std::map<int, std::vector<Eigen::Vector3i>> ind_buf;
+		std::map<int, std::vector<Eigen::Vector3f>> col_buf;
 
-		/**
-		 * 帧缓冲对象,用于存储需要在屏幕上绘制的颜色数据。
-		 */
 		std::vector<Eigen::Vector3f> frame_buf;
+
 		std::vector<float> depth_buf;
 		int get_index(int x, int y);
 
