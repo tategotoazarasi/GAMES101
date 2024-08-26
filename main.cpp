@@ -5,7 +5,6 @@
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include "Triangle.hpp"
-#include "global.hpp"
 #include "rasterizer.hpp"
 
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
@@ -24,7 +23,7 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos) {
 
 Eigen::Matrix4f get_model_matrix(float angle) {
 	Eigen::Matrix4f rotation;
-	angle = angle * MY_PI / 180.f;
+	angle = angle * M_PIf / 180.f;
 	rotation << cos(angle), 0, sin(angle), 0,
 	        0, 1, 0, 0,
 	        -sin(angle), 0, cos(angle), 0,
@@ -45,8 +44,31 @@ Eigen::Matrix4f get_model_matrix(float angle) {
 	return translate * rotation * scale;
 }
 
+/**
+ * 使用给定的参数逐个元素地构建透视投影矩阵并返回该矩阵。
+ * @param eye_fov 视野角度 (Field of View, FOV)，即观察者在垂直方向上可以看到的视角范围，单位为度。
+ * @param aspect_ratio 视锥的宽高比 (Aspect Ratio)，通常是视口的宽度除以高度。
+ * @param zNear 近裁剪面 (Near Clipping Plane) 的距离。距离从观察者到近裁剪面的距离应为正值。
+ * @param zFar 远裁剪面 (Far Clipping Plane) 的距离。距离从观察者到远裁剪面的距离应为正值。
+ * @return 透视投影矩阵
+ */
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar) {
-	// TODO: Use the same projection matrix from the previous assignments
+	// Create the projection matrix for the given parameters.
+	// Then return it.
+	float height              = 2 * -zNear * tan(eye_fov / 2 / 180 * M_PIf);
+	float width               = height * aspect_ratio;
+	Matrix4f proj_persp2ortho = Matrix4f();
+	proj_persp2ortho << zNear, 0, 0, 0,
+	        0, zNear, 0, 0,
+	        0, 0, zNear + zFar, -zNear * zFar,
+	        0, 0, 1, 0;
+	Matrix4f ortho = Matrix4f();
+	ortho << 1 / (width / 2), 0, 0, 0,
+	        0, 1 / (height / 2), 0, 0,
+	        0, 0, -1 / ((zFar - zNear) / 2), 0,
+	        0, 0, 0, 1;
+
+	return ortho * proj_persp2ortho;
 }
 
 Eigen::Vector3f vertex_shader(const vertex_shader_payload &payload) {

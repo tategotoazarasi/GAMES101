@@ -6,7 +6,6 @@
 
 #include "Shader.hpp"
 #include "Triangle.hpp"
-#include "global.hpp"
 #include <algorithm>
 #include <eigen3/Eigen/Eigen>
 #include <optional>
