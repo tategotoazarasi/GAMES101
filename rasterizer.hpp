@@ -4,10 +4,13 @@
 
 #pragma once
 
+#include "Shader.hpp"
 #include "Triangle.hpp"
 #include "global.hpp"
 #include <algorithm>
 #include <eigen3/Eigen/Eigen>
+#include <optional>
+
 using namespace Eigen;
 
 namespace rst {
@@ -52,23 +55,30 @@ namespace rst {
 		pos_buf_id load_positions(const std::vector<Eigen::Vector3f> &positions);
 		ind_buf_id load_indices(const std::vector<Eigen::Vector3i> &indices);
 		col_buf_id load_colors(const std::vector<Eigen::Vector3f> &colors);
+		col_buf_id load_normals(const std::vector<Eigen::Vector3f> &normals);
 
 		void set_model(const Eigen::Matrix4f &m);
 		void set_view(const Eigen::Matrix4f &v);
 		void set_projection(const Eigen::Matrix4f &p);
 
-		void set_pixel(const Eigen::Vector3f &point, const Eigen::Vector3f &color);
+		void set_texture(Texture tex) { texture = tex; }
+
+		void set_vertex_shader(std::function<Eigen::Vector3f(vertex_shader_payload)> vert_shader);
+		void set_fragment_shader(std::function<Eigen::Vector3f(fragment_shader_payload)> frag_shader);
+
+		void set_pixel(const Vector2i &point, const Eigen::Vector3f &color);
 
 		void clear(Buffers buff);
 
 		void draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf_id col_buffer, Primitive type);
+		void draw(std::vector<Triangle *> &TriangleList);
 
 		std::vector<Eigen::Vector3f> &frame_buffer() { return frame_buf; }
 
 	private:
 		void draw_line(Eigen::Vector3f begin, Eigen::Vector3f end);
 
-		void rasterize_triangle(const Triangle &t);
+		void rasterize_triangle(const Triangle &t, const std::array<Eigen::Vector3f, 3> &world_pos);
 
 		// VERTEX SHADER -> MVP -> Clipping -> /.W -> VIEWPORT -> DRAWLINE/DRAWTRI -> FRAGSHADER
 
@@ -77,12 +87,19 @@ namespace rst {
 		Eigen::Matrix4f view;
 		Eigen::Matrix4f projection;
 
+		int normal_id = -1;
+
 		std::map<int, std::vector<Eigen::Vector3f>> pos_buf;
 		std::map<int, std::vector<Eigen::Vector3i>> ind_buf;
 		std::map<int, std::vector<Eigen::Vector3f>> col_buf;
+		std::map<int, std::vector<Eigen::Vector3f>> nor_buf;
+
+		std::optional<Texture> texture;
+
+		std::function<Eigen::Vector3f(fragment_shader_payload)> fragment_shader;
+		std::function<Eigen::Vector3f(vertex_shader_payload)> vertex_shader;
 
 		std::vector<Eigen::Vector3f> frame_buf;
-
 		std::vector<float> depth_buf;
 		int get_index(int x, int y);
 
