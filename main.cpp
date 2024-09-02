@@ -39,13 +39,52 @@ cv::Point2f recursive_bezier(const std::vector<cv::Point2f> &control_points, flo
 	return recursive_bezier(next_control_points, t);
 }
 
+float calcWeight(cv::Vec2i x, cv::Vec2f vxy) {
+	float norm = cv::norm(cv::Vec2f(x) - vxy);
+	return fmax(0, 1 - norm * norm);
+}
+
 void bezier(const std::vector<cv::Point2f> &control_points, cv::Mat &window) {
 	// Iterate through all t = 0 to t = 1 with small steps, and call de Casteljau's
 	// recursive Bezier algorithm.
 	const float STEP = 0.001f;
 	for(float t = 0.f; t <= 1.f; t += STEP) {
-		auto point                                = recursive_bezier(control_points, t);
+		auto point = recursive_bezier(control_points, t);
+		float x    = point.x;
+		float y    = point.y;
+		float dx   = x - floor(x);
+		float dy   = y - floor(y);
+		cv::Vec2i x00, x01, x10, x11;
+		if(dx < 0.5 && dy < 0.5) {// left bottom
+			x00 = cv::Vec2i(floor(x - 0.5), floor(y - 0.5));
+			x01 = cv::Vec2i(floor(x - 0.5), floor(y));
+			x10 = cv::Vec2i(floor(x), floor(y - 0.5));
+			x11 = cv::Vec2i(floor(x), floor(y));
+		} else if(dx < 0.5 && dy >= 0.5) {// left top
+			x00 = cv::Vec2i(floor(x - 0.5), floor(y));
+			x01 = cv::Vec2i(floor(x - 0.5), floor(y + 0.5));
+			x10 = cv::Vec2i(floor(x), floor(y));
+			x11 = cv::Vec2i(floor(x), floor(y + 0.5));
+		} else if(dx >= 0.5 && dy < 0.5) {// right bottom
+			x00 = cv::Vec2i(floor(x), floor(y - 0.5));
+			x01 = cv::Vec2i(floor(x), floor(y));
+			x10 = cv::Vec2i(floor(x + 0.5), floor(y - 0.5));
+			x11 = cv::Vec2i(floor(x + 0.5), floor(y));
+		} else {//right top
+			x00 = cv::Vec2i(floor(x), floor(y));
+			x01 = cv::Vec2i(floor(x), floor(y + 0.5));
+			x10 = cv::Vec2i(floor(x + 0.5), floor(y));
+			x11 = cv::Vec2i(floor(x + 0.5), floor(y + 0.5));
+		}
+		if((x00[0] < 0 || x00[0] >= window.rows || x00[1] < 0 || x00[1] >= window.cols) || (x01[0] < 0 || x01[0] >= window.rows || x01[1] < 0 || x01[1] >= window.cols) || (x10[0] < 0 || x10[0] >= window.rows || x10[1] < 0 || x10[1] >= window.cols) || (x11[0] < 0 || x11[0] >= window.rows || x11[1] < 0 || x11[1] >= window.cols)) {
+			return;
+		}
 		window.at<cv::Vec3b>(point.y, point.x)[1] = 255;
+		auto vxy                                  = cv::Vec2f(x, y);
+		window.at<cv::Vec3b>(x00[1], x00[0])[1]   = fmax(window.at<cv::Vec3b>(x00[1], x00[0])[1], calcWeight(x00, vxy) * 255);
+		window.at<cv::Vec3b>(x01[1], x01[0])[1]   = fmax(window.at<cv::Vec3b>(x01[1], x01[0])[1], calcWeight(x01, vxy) * 255);
+		window.at<cv::Vec3b>(x10[1], x10[0])[1]   = fmax(window.at<cv::Vec3b>(x10[1], x10[0])[1], calcWeight(x10, vxy) * 255);
+		window.at<cv::Vec3b>(x11[1], x11[0])[1]   = fmax(window.at<cv::Vec3b>(x11[1], x11[0])[1], calcWeight(x00, vxy) * 255);
 	}
 }
 
