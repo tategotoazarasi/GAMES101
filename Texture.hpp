@@ -66,10 +66,10 @@ public:
 		auto color10 = image_data.at<cv::Vec3b>(u10[1], u10[0]);
 		auto color11 = image_data.at<cv::Vec3b>(u11[1], u11[0]);
 		float s      = u_img - (static_cast<float>(u00[0]) + 0.5f);
-		auto color0  = color00 * s + color10 * (1 - s);
-		auto color1  = color01 * s + color11 * (1 - s);
+		auto color0  = color00 * (1 - s) + color10 * s;
+		auto color1  = color01 * (1 - s) + color11 * s;
 		float t      = v_img - (static_cast<float>(u00[1]) + 0.5f);
-		auto color   = color0 * t + color1 * (1 - t);
+		auto color   = color0 * (1 - t) + color1 * t;
 		return Eigen::Vector3f(color[0], color[1], color[2]);
 	}
 };
