@@ -98,5 +98,9 @@ Intersection BVHAccel::Intersect(const Ray &ray) const {
 }
 
 Intersection BVHAccel::getIntersection(BVHBuildNode *node, const Ray &ray) const {
-	// TODO Traverse the BVH to find intersection
+	// Traverse the BVH to find intersection
+	if(node->object != nullptr && node->bounds.IntersectP(ray, ray.direction_inv, {ray.direction[0] > 0, ray.direction[1] > 0, ray.direction[2] > 0})) {
+		return node->object->getIntersection(ray);
+	}
+	return {};
 }
