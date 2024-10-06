@@ -6,6 +6,7 @@
 #define RAYTRACING_MATERIAL_H
 
 #include "Vector.hpp"
+#include "global.hpp"
 
 enum MaterialType { DIFFUSE };
 
@@ -130,7 +131,9 @@ Vector3f Material::getColorAt(double u, double v) {
 	return Vector3f();
 }
 
-
+/**
+ * 按照该材质的性质，给定入射方向与法向量，用某种分布采样一个出射方向
+ */
 Vector3f Material::sample(const Vector3f &wi, const Vector3f &N) {
 	switch(m_type) {
 		case DIFFUSE: {
@@ -146,6 +149,14 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N) {
 	}
 }
 
+/**
+ * @brief 计算材质的概率密度函数（PDF）。
+ *
+ * @param wi 入射方向，通常表示光线从光源进入表面的方向，使用局部坐标系（物体表面）表示。
+ * @param wo 出射方向，表示光线从表面反射或透射的方向，使用局部坐标系表示。
+ * @param N  表面的法向量，通常为单位向量，表示表面的朝向，用于计算光线和表面的角度关系。
+ * @return float 返回的概率密度函数值，代表在特定方向（wo）上采样的概率。
+ */
 float Material::pdf(const Vector3f &wi, const Vector3f &wo, const Vector3f &N) {
 	switch(m_type) {
 		case DIFFUSE: {
@@ -159,6 +170,14 @@ float Material::pdf(const Vector3f &wi, const Vector3f &wo, const Vector3f &N) {
 	}
 }
 
+/**
+ * @brief 评估材质的BRDF（双向反射分布函数）。
+ *
+ * @param wi 入射方向，表示光线进入物体表面的方向，通常在局部坐标系中表示。
+ * @param wo 出射方向，表示光线从表面反射的方向，也在局部坐标系中表示。
+ * @param N  法向量，表示交点处的物体表面法线方向，通常是单位向量。
+ * @return Vector3f 返回BRDF的值，用于计算反射光的强度。
+ */
 Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &N) {
 	switch(m_type) {
 		case DIFFUSE: {
