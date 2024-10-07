@@ -15,7 +15,7 @@ float progress = 0;
 
 inline float deg2rad(const float &deg) { return deg * M_PI / 180.0; }
 
-const float EPSILON = 0.00001;
+const float EPSILON = 1e-4;
 
 /**
  * @brief 渲染指定范围的图像行。
